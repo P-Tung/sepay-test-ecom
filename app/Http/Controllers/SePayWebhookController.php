@@ -178,6 +178,17 @@ class SePayWebhookController extends Controller
             return true;
         }
 
+        $providedSecretAuthorization = preg_replace(
+            '/^Apikey\s+/i',
+            '',
+            (string) $request->header('Authorization', '')
+        );
+
+        if ($secretKey !== '' && $providedSecretAuthorization !== ''
+            && hash_equals($secretKey, $providedSecretAuthorization)) {
+            return true;
+        }
+
         $signature = (string) ($request->input('signature') ?? $request->header('X-Sepay-Signature', '') ?? '');
 
         if ($signature !== '') {

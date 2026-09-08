@@ -108,4 +108,22 @@ class SePayWebhookTest extends TestCase
             'transaction_id' => 'sandbox-tx-3',
         ]);
     }
+
+    public function test_secret_key_is_accepted_as_an_apikey_authorization_header(): void
+    {
+        $response = $this->withHeaders([
+            'Authorization' => 'Apikey test-secret-key',
+        ])->postJson(route('sepay.ipn'), [
+            'notification_type' => 'TRANSACTION_VOID',
+            'order' => [
+                'order_invoice_number' => 'CHODCU-999',
+                'order_amount' => '100000.00',
+            ],
+            'transaction' => [
+                'transaction_status' => 'VOIDED',
+            ],
+        ]);
+
+        $response->assertOk()->assertJson(['success' => true]);
+    }
 }
