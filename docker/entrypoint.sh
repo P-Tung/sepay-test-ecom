@@ -16,5 +16,6 @@ if [ "${SEED_DATABASE:-false}" = "true" ]; then
     php artisan db:seed --force
 fi
 php artisan storage:link || true
+chown -R www-data:www-data database storage bootstrap/cache
 
 exec "$@"
