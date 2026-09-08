@@ -11,6 +11,13 @@ class SePayWebhookTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('services.sepay.secret_key', 'test-secret-key');
+    }
+
     public function test_sepay_ipn_marks_a_matching_order_as_paid(): void
     {
         $order = Order::create([
@@ -20,17 +27,18 @@ class SePayWebhookTest extends TestCase
             'payment_method' => 'online',
         ]);
 
-        $response = $this->postJson(route('sepay.ipn'), [
-            'notification_type' => 'ORDER_PAID',
-            'order' => [
-                'order_invoice_number' => 'CHODCU-' . $order->id,
-                'order_amount' => '100000.00',
-            ],
-            'transaction' => [
-                'transaction_id' => 'sandbox-tx-1',
-                'transaction_status' => 'APPROVED',
-            ],
-        ]);
+        $response = $this->withHeaders(['X-Secret-Key' => 'test-secret-key'])
+            ->postJson(route('sepay.ipn'), [
+                'notification_type' => 'ORDER_PAID',
+                'order' => [
+                    'order_invoice_number' => 'CHODCU-' . $order->id,
+                    'order_amount' => '100000.00',
+                ],
+                'transaction' => [
+                    'transaction_id' => 'sandbox-tx-1',
+                    'transaction_status' => 'APPROVED',
+                ],
+            ]);
 
         $response->assertOk()->assertJson(['success' => true]);
         $this->assertDatabaseHas('orders', [
@@ -49,17 +57,18 @@ class SePayWebhookTest extends TestCase
             'payment_method' => 'online',
         ]);
 
-        $this->postJson(route('sepay.ipn'), [
-            'notification_type' => 'ORDER_PAID',
-            'order' => [
-                'order_invoice_number' => 'CHODCU-' . $order->id,
-                'order_amount' => '99999',
-            ],
-            'transaction' => [
-                'transaction_id' => 'sandbox-tx-2',
-                'transaction_status' => 'APPROVED',
-            ],
-        ])->assertOk();
+        $this->withHeaders(['X-Secret-Key' => 'test-secret-key'])
+            ->postJson(route('sepay.ipn'), [
+                'notification_type' => 'ORDER_PAID',
+                'order' => [
+                    'order_invoice_number' => 'CHODCU-' . $order->id,
+                    'order_amount' => '99999',
+                ],
+                'transaction' => [
+                    'transaction_id' => 'sandbox-tx-2',
+                    'transaction_status' => 'APPROVED',
+                ],
+            ])->assertOk();
 
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,

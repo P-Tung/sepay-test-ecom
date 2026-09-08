@@ -165,7 +165,8 @@ class SePayWebhookController extends Controller
      * Chap nhan mot trong hai bang chung:
      *  1. Field "signature" (hoac header X-Sepay-Signature) - HMAC-SHA256 base64 bang SEPAY_SECRET_KEY.
      *     Neu payload CO signature thi bat buoc phai khop, khong the vong qua bang Apikey.
-     *  2. Header "Authorization: Apikey <SEPAY_WEBHOOK_KEY>" - co che SePay dung cho webhook.
+     *  2. Header "X-Secret-Key: <SEPAY_SECRET_KEY>" - co che SePay dung cho IPN.
+     *  3. Header "Authorization: Apikey <SEPAY_WEBHOOK_KEY>" - co che webhook tuy chon.
      * Khong co bang chung nao hop le -> false -> 403.
      */
     private function ipnSignatureIsValid(Request $request): bool
@@ -196,6 +197,13 @@ class SePayWebhookController extends Controller
             ]);
 
             return false;
+        }
+
+        $secretKey = (string) config('services.sepay.secret_key');
+        $providedSecretKey = (string) $request->header('X-Secret-Key', '');
+
+        if ($secretKey !== '' && $providedSecretKey !== '' && hash_equals($secretKey, $providedSecretKey)) {
+            return true;
         }
 
         $webhookKey = (string) config('services.sepay.webhook_key');
