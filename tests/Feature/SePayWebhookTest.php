@@ -76,4 +76,36 @@ class SePayWebhookTest extends TestCase
             'transaction_id' => null,
         ]);
     }
+
+    public function test_secret_key_header_takes_priority_over_an_optional_signature(): void
+    {
+        $order = Order::create([
+            'user_id' => User::factory()->create()->id,
+            'total' => 100000,
+            'status' => 'processing',
+            'payment_method' => 'online',
+        ]);
+
+        $response = $this->withHeaders([
+            'X-Secret-Key' => 'test-secret-key',
+        ])->postJson(route('sepay.ipn'), [
+            'signature' => 'gateway-signature-field',
+            'notification_type' => 'ORDER_PAID',
+            'order' => [
+                'order_invoice_number' => 'CHODCU-' . $order->id,
+                'order_amount' => '100000.00',
+            ],
+            'transaction' => [
+                'transaction_id' => 'sandbox-tx-3',
+                'transaction_status' => 'APPROVED',
+            ],
+        ]);
+
+        $response->assertOk()->assertJson(['success' => true]);
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'paid',
+            'transaction_id' => 'sandbox-tx-3',
+        ]);
+    }
 }

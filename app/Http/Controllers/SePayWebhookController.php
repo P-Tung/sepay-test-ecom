@@ -171,6 +171,13 @@ class SePayWebhookController extends Controller
      */
     private function ipnSignatureIsValid(Request $request): bool
     {
+        $secretKey = (string) config('services.sepay.secret_key');
+        $providedSecretKey = (string) $request->header('X-Secret-Key', '');
+
+        if ($secretKey !== '' && $providedSecretKey !== '' && hash_equals($secretKey, $providedSecretKey)) {
+            return true;
+        }
+
         $signature = (string) ($request->input('signature') ?? $request->header('X-Sepay-Signature', '') ?? '');
 
         if ($signature !== '') {
@@ -197,13 +204,6 @@ class SePayWebhookController extends Controller
             ]);
 
             return false;
-        }
-
-        $secretKey = (string) config('services.sepay.secret_key');
-        $providedSecretKey = (string) $request->header('X-Secret-Key', '');
-
-        if ($secretKey !== '' && $providedSecretKey !== '' && hash_equals($secretKey, $providedSecretKey)) {
-            return true;
         }
 
         $webhookKey = (string) config('services.sepay.webhook_key');
