@@ -69,7 +69,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware('auth')->group(function () {
     Route::get('/products', [ProductController::class, 'publicIndex'])->name('products.index');
     Route::get('/products/{product}', [ProductController::class, 'publicShow'])->name('products.show');
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
